@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Eye, EyeOff, Save, Key, Shield, Monitor } from 'lucide-react';
-import { getSettings, saveSettings, type Settings } from '../lib/api';
+import { getConfig, settingsFromConfig, updateConfig, type Settings } from '../lib/api';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -30,26 +30,29 @@ const LLM_MODELS = [
 ];
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
-  const [settings, setSettings] = useState<Settings>(getSettings());
+  const [settings, setSettings] = useState<Settings | null>(null);
   const [showApiKey, setShowApiKey] = useState(false);
+  const [showCloudApiKey, setShowCloudApiKey] = useState(false);
   const [customModel, setCustomModel] = useState('');
   const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   useEffect(() => {
     if (isOpen) {
-      setSettings(getSettings());
-      setStatus(null);
+      getConfig()
+        .then((config) => setSettings(settingsFromConfig(config)))
+        .catch(() => setStatus({ type: 'error', message: 'Failed to load settings' }));
     }
   }, [isOpen]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (!settings) return;
     try {
       const finalSettings = {
         ...settings,
         llm_model: settings.llm_model === 'custom' ? customModel : settings.llm_model,
       };
-      saveSettings(finalSettings);
-      setStatus({ type: 'success', message: 'Settings saved successfully!' });
+      await updateConfig(finalSettings);
+      setStatus({ type: 'success', message: 'Settings saved. New conversations will use the updated configuration.' });
       setTimeout(() => {
         onClose();
       }, 1000);
@@ -59,6 +62,15 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   };
 
   if (!isOpen) return null;
+  if (!settings) {
+    return (
+      <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+        <div className="bg-surface rounded-xl w-full max-w-md p-6 shadow-2xl">
+          <p className="text-text-secondary">Loading settings...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div 
@@ -143,7 +155,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   </button>
                 </div>
                 <p className="text-xs text-text-muted mt-1">
-                  Your API key is stored in browser localStorage and sent to the server for each request.
+                  Stored by the local backend. Leave blank to keep the existing key
+                  {settings.has_llm_api_key ? ' (currently configured).' : '.'}
                 </p>
               </div>
 
@@ -201,9 +214,56 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               >
                 <option value="local">Local (Direct filesystem)</option>
                 <option value="docker">Docker (Isolated container)</option>
+                  <option value="remote">Remote Agent Server</option>
+                  <option value="api_remote">Runtime API</option>
                 <option value="cloud">OpenHands Cloud</option>
               </select>
             </div>
+
+              <div className="mt-4">
+                <label className="block text-sm text-text-secondary mb-2">Workspace Directory</label>
+                <input
+                  type="text"
+                  value={settings.workspace_dir}
+                  onChange={(e) => setSettings({ ...settings, workspace_dir: e.target.value })}
+                  placeholder="/workspace"
+                  className="w-full px-4 py-3 bg-bg border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary"
+                />
+              </div>
+
+              {settings.workspace_type === 'cloud' && (
+                <div className="mt-4 space-y-4">
+                  <div>
+                    <label className="block text-sm text-text-secondary mb-2">OpenHands Cloud URL</label>
+                    <input
+                      type="text"
+                      value={settings.openhands_cloud_url}
+                      onChange={(e) => setSettings({ ...settings, openhands_cloud_url: e.target.value })}
+                      placeholder="https://app.all-hands.dev"
+                      className="w-full px-4 py-3 bg-bg border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-text-secondary mb-2">OpenHands Cloud API Key</label>
+                    <div className="relative">
+                      <input
+                        type={showCloudApiKey ? 'text' : 'password'}
+                        value={settings.openhands_cloud_api_key}
+                        onChange={(e) => setSettings({ ...settings, openhands_cloud_api_key: e.target.value })}
+                        placeholder={settings.has_openhands_cloud_api_key ? 'Configured - leave blank to keep existing key' : 'sk-oh-...'}
+                        className="w-full px-4 py-3 pr-12 bg-bg border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary font-mono"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCloudApiKey(!showCloudApiKey)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"
+                      >
+                        {showCloudApiKey ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
           </section>
 
           {/* Status */}

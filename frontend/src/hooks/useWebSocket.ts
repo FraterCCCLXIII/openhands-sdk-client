@@ -12,10 +12,62 @@ interface UseWebSocketOptions {
 
 export function useWebSocket(conversationId: string, options: UseWebSocketOptions = {}) {
   const wsRef = useRef<WebSocket | null>(null);
+  const optionsRef = useRef(options);
+  const connectRef = useRef<() => void>(() => {});
   const reconnectAttemptsRef = useRef(0);
   const pingIntervalRef = useRef<number | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  useEffect(() => {
+    optionsRef.current = options;
+  }, [options]);
+
+  const handleMessage = useCallback((data: WSResponse) => {
+    switch (data.type) {
+      case 'history':
+        optionsRef.current.onHistory?.(data.events || []);
+        break;
+      case 'event':
+        if (data.event) {
+          optionsRef.current.onEvent?.(data.event);
+        }
+        break;
+      case 'complete':
+        setIsProcessing(false);
+        optionsRef.current.onComplete?.(data.events || []);
+        break;
+      case 'error':
+        setIsProcessing(false);
+        optionsRef.current.onError?.(data.error || 'Unknown error');
+        break;
+      case 'ack':
+        // Message acknowledged
+        break;
+      case 'pong':
+        // Ping response
+        break;
+      case 'confirmed':
+        optionsRef.current.onEvent?.({
+          id: `evt_confirm_${Date.now()}`,
+          type: 'state_update',
+          timestamp: new Date().toISOString(),
+          source: 'environment',
+          content: { state: data.approved ? 'approved' : 'rejected' },
+        });
+        break;
+    }
+  }, []);
+
+  const attemptReconnect = useCallback(() => {
+    const maxAttempts = 5;
+    if (reconnectAttemptsRef.current < maxAttempts) {
+      reconnectAttemptsRef.current++;
+      const delay = 1000 * reconnectAttemptsRef.current;
+      console.log(`Attempting reconnect in ${delay}ms...`);
+      setTimeout(() => connectRef.current(), delay);
+    }
+  }, []);
 
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
@@ -30,7 +82,7 @@ export function useWebSocket(conversationId: string, options: UseWebSocketOption
       console.log('WebSocket connected');
       reconnectAttemptsRef.current = 0;
       setIsConnected(true);
-      options.onConnect?.();
+      optionsRef.current.onConnect?.();
       
       // Start ping interval
       pingIntervalRef.current = window.setInterval(() => {
@@ -55,60 +107,18 @@ export function useWebSocket(conversationId: string, options: UseWebSocketOption
       if (pingIntervalRef.current) {
         clearInterval(pingIntervalRef.current);
       }
-      options.onDisconnect?.();
+      optionsRef.current.onDisconnect?.();
       attemptReconnect();
     };
 
     ws.onerror = (error) => {
       console.error('WebSocket error:', error);
-      options.onError?.('Connection error');
+      optionsRef.current.onError?.('Connection error');
     };
-  }, [conversationId, options]);
+  }, [attemptReconnect, conversationId, handleMessage]);
 
-  const handleMessage = useCallback((data: WSResponse) => {
-    switch (data.type) {
-      case 'history':
-        options.onHistory?.(data.events || []);
-        break;
-      case 'event':
-        if (data.event) {
-          options.onEvent?.(data.event);
-        }
-        break;
-      case 'complete':
-        setIsProcessing(false);
-        options.onComplete?.(data.events || []);
-        break;
-      case 'error':
-        setIsProcessing(false);
-        options.onError?.(data.error || 'Unknown error');
-        break;
-      case 'ack':
-        // Message acknowledged
-        break;
-      case 'pong':
-        // Ping response
-        break;
-      case 'confirmed':
-        options.onEvent?.({
-          id: `evt_confirm_${Date.now()}`,
-          type: 'state_update',
-          timestamp: new Date().toISOString(),
-          source: 'environment',
-          content: { state: data.approved ? 'approved' : 'rejected' },
-        });
-        break;
-    }
-  }, [options]);
-
-  const attemptReconnect = useCallback(() => {
-    const maxAttempts = 5;
-    if (reconnectAttemptsRef.current < maxAttempts) {
-      reconnectAttemptsRef.current++;
-      const delay = 1000 * reconnectAttemptsRef.current;
-      console.log(`Attempting reconnect in ${delay}ms...`);
-      setTimeout(connect, delay);
-    }
+  useEffect(() => {
+    connectRef.current = connect;
   }, [connect]);
 
   const sendMessage = useCallback((content: string) => {

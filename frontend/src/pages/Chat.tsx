@@ -36,23 +36,50 @@ export function Chat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  const appendEvents = useCallback((incomingEvents: ConversationEvent[]) => {
+    setEvents(prev => {
+      const seenIds = new Set(prev.map(event => event.id));
+      const next = [...prev];
+
+      for (const event of incomingEvents) {
+        if (seenIds.has(event.id)) continue;
+        const isDuplicateOptimisticUserMessage =
+          event.type === 'message' &&
+          event.source === 'user' &&
+          next.some(existing =>
+            existing.id.startsWith('user_') &&
+            existing.source === 'user' &&
+            existing.content.text === event.content.text
+          );
+
+        if (!isDuplicateOptimisticUserMessage) {
+          next.push(event);
+          seenIds.add(event.id);
+        }
+      }
+
+      return next;
+    });
+  }, []);
+
   const handleHistory = useCallback((historyEvents: ConversationEvent[]) => {
     setEvents(historyEvents);
   }, []);
 
   const handleEvent = useCallback((event: ConversationEvent) => {
-    setEvents(prev => [...prev, event]);
+    appendEvents([event]);
     if (event.type === 'confirmation_request') {
       setPendingConfirmation(event);
     }
-  }, []);
+  }, [appendEvents]);
 
-  const handleComplete = useCallback(async () => {
+  const handleComplete = useCallback(async (completedEvents: ConversationEvent[]) => {
+    appendEvents(completedEvents);
     if (id) {
       const newStats = await getConversationStats(id);
       setStats(newStats);
     }
-  }, [id]);
+  }, [appendEvents, id]);
 
   const handleError = useCallback((error: string) => {
     setEvents(prev => [...prev, {
@@ -74,19 +101,7 @@ export function Chat() {
     }
   );
 
-  useEffect(() => {
-    if (!id) {
-      navigate('/');
-      return;
-    }
-    loadConversation();
-  }, [id, navigate]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [events]);
-
-  async function loadConversation() {
+  const loadConversation = useCallback(async () => {
     if (!id) return;
     try {
       const [convData, statsData] = await Promise.all([
@@ -99,7 +114,19 @@ export function Chat() {
       console.error('Failed to load conversation:', error);
       navigate('/');
     }
-  }
+  }, [id, navigate]);
+
+  useEffect(() => {
+    if (!id) {
+      navigate('/');
+      return;
+    }
+    loadConversation();
+  }, [id, navigate, loadConversation]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [events]);
 
   function handleSendMessage() {
     if (!message.trim() || isProcessing) return;

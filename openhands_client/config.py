@@ -1,10 +1,11 @@
 """Configuration management for OpenHands client."""
 
+import json
 import os
-from dataclasses import dataclass, field
 from enum import Enum
+from pathlib import Path
 from typing import Optional
-from pydantic import BaseModel, SecretStr
+from pydantic import BaseModel, Field, SecretStr
 
 
 class WorkspaceType(str, Enum):
@@ -57,8 +58,8 @@ class WorkspaceConfig(BaseModel):
 
 class ClientConfig(BaseModel):
     """Main client configuration."""
-    llm: LLMConfig = field(default_factory=LLMConfig)
-    workspace: WorkspaceConfig = field(default_factory=WorkspaceConfig)
+    llm: LLMConfig = Field(default_factory=LLMConfig)
+    workspace: WorkspaceConfig = Field(default_factory=WorkspaceConfig)
     security_policy: SecurityPolicy = SecurityPolicy.CONFIRM_RISKY
     persistence_dir: str = "./conversations"
     enable_browser_tools: bool = False
@@ -87,6 +88,57 @@ class ClientConfig(BaseModel):
             enable_metrics=os.getenv("ENABLE_METRICS", "true").lower() == "true",
             max_context_size=int(os.getenv("MAX_CONTEXT_SIZE", "50")),
         )
+
+    @classmethod
+    def from_runtime_file(cls, path: str | Path = ".openhands-client/config.json") -> "ClientConfig":
+        """Create configuration by layering persisted app settings over env defaults."""
+        config = cls.from_env()
+        config_path = Path(path)
+        if not config_path.exists():
+            return config
+
+        with open(config_path, "r") as f:
+            data = json.load(f)
+
+        llm = data.get("llm", {})
+        workspace = data.get("workspace", {})
+
+        if "model" in llm:
+            config.llm.model = llm["model"]
+        if "api_key" in llm:
+            config.llm.api_key = SecretStr(llm["api_key"]) if llm["api_key"] else None
+        if "base_url" in llm:
+            config.llm.base_url = llm["base_url"] or None
+
+        if "type" in workspace:
+            config.workspace.workspace_type = WorkspaceType(workspace["type"])
+        if "working_dir" in workspace:
+            config.workspace.working_dir = workspace["working_dir"]
+        if "host" in workspace:
+            config.workspace.host = workspace["host"] or None
+        if "api_key" in workspace:
+            config.workspace.api_key = SecretStr(workspace["api_key"]) if workspace["api_key"] else None
+        if "runtime_api_url" in workspace:
+            config.workspace.runtime_api_url = workspace["runtime_api_url"] or None
+        if "runtime_api_key" in workspace:
+            config.workspace.runtime_api_key = SecretStr(workspace["runtime_api_key"]) if workspace["runtime_api_key"] else None
+        if "cloud_api_url" in workspace:
+            config.workspace.cloud_api_url = workspace["cloud_api_url"] or None
+        if "cloud_api_key" in workspace:
+            config.workspace.cloud_api_key = SecretStr(workspace["cloud_api_key"]) if workspace["cloud_api_key"] else None
+
+        if "security_policy" in data:
+            config.security_policy = SecurityPolicy(data["security_policy"])
+        if "persistence_dir" in data:
+            config.persistence_dir = data["persistence_dir"]
+        if "enable_browser_tools" in data:
+            config.enable_browser_tools = bool(data["enable_browser_tools"])
+        if "enable_metrics" in data:
+            config.enable_metrics = bool(data["enable_metrics"])
+        if "max_context_size" in data:
+            config.max_context_size = int(data["max_context_size"])
+
+        return config
     
     def to_dict(self) -> dict:
         """Convert to dictionary (hiding secrets)."""
@@ -100,6 +152,36 @@ class ClientConfig(BaseModel):
                 "type": self.workspace.workspace_type.value if isinstance(self.workspace.workspace_type, WorkspaceType) else self.workspace.workspace_type,
                 "working_dir": self.workspace.working_dir,
                 "host": self.workspace.host,
+                "runtime_api_url": self.workspace.runtime_api_url,
+                "cloud_api_url": self.workspace.cloud_api_url,
+                "has_api_key": self.workspace.api_key is not None,
+                "has_runtime_api_key": self.workspace.runtime_api_key is not None,
+                "has_cloud_api_key": self.workspace.cloud_api_key is not None,
+            },
+            "security_policy": self.security_policy.value if isinstance(self.security_policy, SecurityPolicy) else self.security_policy,
+            "persistence_dir": self.persistence_dir,
+            "enable_browser_tools": self.enable_browser_tools,
+            "enable_metrics": self.enable_metrics,
+            "max_context_size": self.max_context_size,
+        }
+
+    def to_runtime_dict(self) -> dict:
+        """Convert to a persisted runtime config, including local app secrets."""
+        return {
+            "llm": {
+                "model": self.llm.model,
+                "api_key": self.llm.api_key.get_secret_value() if self.llm.api_key else "",
+                "base_url": self.llm.base_url,
+            },
+            "workspace": {
+                "type": self.workspace.workspace_type.value if isinstance(self.workspace.workspace_type, WorkspaceType) else self.workspace.workspace_type,
+                "working_dir": self.workspace.working_dir,
+                "host": self.workspace.host,
+                "api_key": self.workspace.api_key.get_secret_value() if self.workspace.api_key else "",
+                "runtime_api_url": self.workspace.runtime_api_url,
+                "runtime_api_key": self.workspace.runtime_api_key.get_secret_value() if self.workspace.runtime_api_key else "",
+                "cloud_api_url": self.workspace.cloud_api_url,
+                "cloud_api_key": self.workspace.cloud_api_key.get_secret_value() if self.workspace.cloud_api_key else "",
             },
             "security_policy": self.security_policy.value if isinstance(self.security_policy, SecurityPolicy) else self.security_policy,
             "persistence_dir": self.persistence_dir,

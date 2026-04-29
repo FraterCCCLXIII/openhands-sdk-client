@@ -12,6 +12,7 @@ class Chat {
         this.conversationId = conversationId;
         this.ws = null;
         this.isProcessing = false;
+        this.renderedEventIds = new Set();
         
         // DOM elements
         this.messagesContainer = document.getElementById('messages-container');
@@ -127,8 +128,10 @@ class Chat {
         });
         
         this.ws.on('complete', (events) => {
+            events.forEach(event => this.renderEvent(event));
             this.setProcessing(false);
             this.loadStats();
+            this.scrollToBottom();
         });
         
         this.ws.on('error', (data) => {
@@ -185,6 +188,11 @@ class Chat {
     }
     
     renderEvent(event) {
+        if (event.id) {
+            if (this.renderedEventIds.has(event.id)) return;
+            this.renderedEventIds.add(event.id);
+        }
+
         // Remove typing indicator if present
         this.removeTypingIndicator();
         

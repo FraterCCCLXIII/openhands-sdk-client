@@ -101,6 +101,9 @@ Required settings:
 ### Start the Server
 
 ```bash
+# Build the primary React UI
+cd frontend && npm install && npm run build && cd ..
+
 # Using Python directly
 python server.py
 
@@ -116,6 +119,9 @@ LLM_API_KEY=your-key python server.py
 Open your browser to:
 - **Dashboard**: http://localhost:12000/
 - **Chat**: http://localhost:12000/chat/{conversation_id}
+
+`server.py` serves the built React app from `frontend/dist` when present. The
+legacy `templates/` and `static/` UI remains as a fallback for development.
 
 ### API Endpoints
 
@@ -215,6 +221,25 @@ npm run build
 
 # The dev server proxies /api and /ws to localhost:12000
 ```
+
+### Desktop Development
+
+The same web app can be launched in Electron once the Python backend is running:
+
+```bash
+cd frontend
+OPENHANDS_CLIENT_URL=http://localhost:12000 npm run desktop
+```
+
+If `OPENHANDS_CLIENT_URL` is omitted, Electron defaults to
+`http://localhost:12002`, matching the local port used when `12000` is occupied.
+
+### Runtime Settings
+
+Settings edited in the app are persisted by the backend in
+`.openhands-client/config.json` and are redacted when returned through
+`/api/config`. Secret fields can be left blank in the UI to keep existing stored
+values. The file is gitignored and created with owner-only permissions.
 
 ### Adding Custom Tools
 

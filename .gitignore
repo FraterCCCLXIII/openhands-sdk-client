@@ -2,6 +2,7 @@ server.log
 __pycache__/
 *.pyc
 .env
+.openhands-client/
 conversations/
 node_modules/
 frontend/node_modules/

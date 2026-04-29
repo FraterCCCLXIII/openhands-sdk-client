@@ -18,5 +18,10 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    rules: {
+      // Route-level data loading intentionally updates state after effects kick
+      // off async API calls. This app is not using a framework data loader yet.
+      'react-hooks/set-state-in-effect': 'off',
+    },
   },
 ])

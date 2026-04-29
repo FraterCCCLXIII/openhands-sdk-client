@@ -14,8 +14,7 @@ import {
   getGlobalStats, 
   getConfig, 
   listConversations, 
-  deleteConversation,
-  hasApiKey 
+  deleteConversation
 } from '../lib/api';
 import type { GlobalStats, AppConfig, Conversation } from '../types';
 
@@ -30,11 +29,6 @@ export function Dashboard({ onOpenSettings }: DashboardProps) {
   const [loading, setLoading] = useState(true);
   const [showSetupBanner, setShowSetupBanner] = useState(false);
 
-  useEffect(() => {
-    loadData();
-    setShowSetupBanner(!hasApiKey());
-  }, []);
-
   async function loadData() {
     setLoading(true);
     try {
@@ -46,12 +40,17 @@ export function Dashboard({ onOpenSettings }: DashboardProps) {
       setStats(statsData);
       setConfig(configData);
       setConversations(convsData.conversations);
+      setShowSetupBanner(!configData.llm.has_api_key);
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
     } finally {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   async function handleDelete(id: string, e: React.MouseEvent) {
     e.preventDefault();

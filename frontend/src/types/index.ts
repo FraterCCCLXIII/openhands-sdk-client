@@ -53,7 +53,12 @@ export interface LLMConfig {
 export interface WorkspaceConfig {
   type: string;
   working_dir: string;
-  host?: string;
+  host?: string | null;
+  runtime_api_url?: string | null;
+  cloud_api_url?: string | null;
+  has_api_key: boolean;
+  has_runtime_api_key: boolean;
+  has_cloud_api_key: boolean;
 }
 
 export interface AppConfig {
@@ -66,13 +71,25 @@ export interface AppConfig {
   max_context_size: number;
 }
 
-// Settings (client-side with secrets)
+// Settings edited in the app and persisted server-side.
 export interface Settings {
   llm_model: string;
   llm_api_key: string;
   llm_base_url: string;
   workspace_type: string;
+  workspace_dir: string;
+  remote_host: string;
+  remote_api_key: string;
+  runtime_api_url: string;
+  runtime_api_key: string;
+  openhands_cloud_url: string;
+  openhands_cloud_api_key: string;
   security_policy: string;
+  enable_browser_tools: boolean;
+  enable_metrics: boolean;
+  max_context_size: number;
+  has_llm_api_key: boolean;
+  has_openhands_cloud_api_key: boolean;
 }
 
 // WebSocket message types

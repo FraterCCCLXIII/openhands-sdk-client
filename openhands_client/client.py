@@ -144,16 +144,19 @@ class OpenHandsClient:
             # Create workspace
             workspace = self._get_workspace(conversation_id)
             
-            # Create SDK conversation
+            # Create SDK conversation. Remote/cloud workspaces persist state on
+            # the remote agent server, and the SDK rejects a local persistence dir.
             conv_dir = self.conversation_manager.persistence_dir / conversation_id
-            
-            sdk_conversation = Conversation(
-                agent=self._sdk_agent,
-                workspace=workspace,
-                persistence_dir=str(conv_dir),
-                conversation_id=conversation_id,
-                callbacks=[event_handler.process_sdk_event],
-            )
+            conversation_kwargs = {
+                "agent": self._sdk_agent,
+                "workspace": workspace,
+                "conversation_id": conversation_id,
+                "callbacks": [event_handler.process_sdk_event],
+            }
+            if not self._is_remote_workspace(workspace):
+                conversation_kwargs["persistence_dir"] = str(conv_dir)
+
+            sdk_conversation = Conversation(**conversation_kwargs)
             
             # Set security policy
             policy = self._get_security_policy()
@@ -170,6 +173,16 @@ class OpenHandsClient:
                 event_handler.create_error_event(str(e))
             self.conversation_manager.set_status(conversation_id, "error")
             return False
+
+    @staticmethod
+    def _is_remote_workspace(workspace: Any) -> bool:
+        """Return whether the SDK workspace is backed by a remote agent server."""
+        try:
+            from openhands.sdk.workspace import RemoteWorkspace
+        except ImportError:
+            return False
+
+        return isinstance(workspace, RemoteWorkspace)
     
     async def send_message(
         self,

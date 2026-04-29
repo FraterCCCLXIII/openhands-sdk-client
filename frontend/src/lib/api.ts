@@ -22,20 +22,12 @@ class APIError extends Error {
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE}${endpoint}`;
-  
-  // Get settings from localStorage for API key
-  const settings = getSettings();
-  
+
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
     ...options.headers,
   };
-  
-  // Add API key header if available
-  if (settings.llm_api_key) {
-    (headers as Record<string, string>)['X-LLM-API-Key'] = settings.llm_api_key;
-  }
-  
+
   const response = await fetch(url, {
     ...options,
     headers,
@@ -49,28 +41,26 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   return response.json();
 }
 
-// Settings (stored in localStorage)
-export function getSettings(): Settings {
-  const stored = localStorage.getItem('openhands-settings');
-  if (stored) {
-    return JSON.parse(stored);
-  }
+export function settingsFromConfig(config: AppConfig): Settings {
   return {
-    llm_model: 'anthropic/claude-sonnet-4-5-20250929',
+    llm_model: config.llm.model,
     llm_api_key: '',
-    llm_base_url: '',
-    workspace_type: 'local',
-    security_policy: 'confirm_risky',
+    llm_base_url: config.llm.base_url ?? '',
+    workspace_type: config.workspace.type,
+    workspace_dir: config.workspace.working_dir,
+    remote_host: config.workspace.host ?? '',
+    remote_api_key: '',
+    runtime_api_url: config.workspace.runtime_api_url ?? '',
+    runtime_api_key: '',
+    openhands_cloud_url: config.workspace.cloud_api_url ?? 'https://app.all-hands.dev',
+    openhands_cloud_api_key: '',
+    security_policy: config.security_policy,
+    enable_browser_tools: config.enable_browser_tools,
+    enable_metrics: config.enable_metrics,
+    max_context_size: config.max_context_size,
+    has_llm_api_key: config.llm.has_api_key,
+    has_openhands_cloud_api_key: config.workspace.has_cloud_api_key,
   };
-}
-
-export function saveSettings(settings: Settings): void {
-  localStorage.setItem('openhands-settings', JSON.stringify(settings));
-}
-
-export function hasApiKey(): boolean {
-  const settings = getSettings();
-  return !!settings.llm_api_key;
 }
 
 // Health check

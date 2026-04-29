@@ -18,6 +18,9 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 # ==================== Mock Client Implementation ====================
@@ -295,15 +298,14 @@ else:
 async def index(request: Request):
     if use_react:
         return HTMLResponse(content=(frontend_dist / "index.html").read_text())
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(request, "index.html")
 
 
 @app.get("/chat/{conversation_id}", response_class=HTMLResponse)
 async def chat_page(request: Request, conversation_id: str):
     if use_react:
         return HTMLResponse(content=(frontend_dist / "index.html").read_text())
-    return templates.TemplateResponse("chat.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "chat.html", {
         "conversation_id": conversation_id,
     })
 
