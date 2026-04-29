@@ -14,6 +14,7 @@ import {
   Info
 } from 'lucide-react';
 import { useWebSocket } from '../hooks/useWebSocket';
+import { WorkspaceTabPanel, WorkspaceTabs, type WorkspaceTab } from '../components/conversation/WorkspaceTabs';
 import { 
   getConversation, 
   getConversationStats, 
@@ -31,6 +32,7 @@ export function Chat() {
   const [stats, setStats] = useState<ConversationStats | null>(null);
   const [events, setEvents] = useState<ConversationEvent[]>([]);
   const [message, setMessage] = useState('');
+  const [activeTab, setActiveTab] = useState<WorkspaceTab>('chat');
   const [pendingConfirmation, setPendingConfirmation] = useState<ConversationEvent | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -324,31 +326,34 @@ export function Chat() {
 
       {/* Main Chat Area */}
       <div className="app-card flex-1 flex flex-col rounded-xl overflow-hidden">
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-4">
-          {events.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-center text-text-secondary">
-              <Bot className="w-16 h-16 mb-4 text-text-muted" />
-              <h2 className="text-xl font-medium text-text-primary mb-2">Start a conversation</h2>
-              <p>Send a message to begin interacting with the OpenHands agent.</p>
-            </div>
-          ) : (
-            <>
-              {events.map(renderEvent)}
-              {isProcessing && (
-                <div className="flex gap-1 p-4 self-start">
-                  <span className="w-2 h-2 bg-text-muted rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
-                  <span className="w-2 h-2 bg-text-muted rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-                  <span className="w-2 h-2 bg-text-muted rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
-                </div>
-              )}
-            </>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
+        <WorkspaceTabs activeTab={activeTab} onActiveTabChange={setActiveTab} />
+        <WorkspaceTabPanel tab={activeTab} conversation={conversation} events={events}>
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-4">
+            {events.length === 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center text-center text-text-secondary">
+                <Bot className="w-16 h-16 mb-4 text-text-muted" />
+                <h2 className="text-xl font-medium text-text-primary mb-2">Start a conversation</h2>
+                <p>Send a message to begin interacting with the OpenHands agent.</p>
+              </div>
+            ) : (
+              <>
+                {events.map(renderEvent)}
+                {isProcessing && (
+                  <div className="flex gap-1 p-4 self-start">
+                    <span className="w-2 h-2 bg-text-muted rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+                    <span className="w-2 h-2 bg-text-muted rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                    <span className="w-2 h-2 bg-text-muted rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+                  </div>
+                )}
+              </>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+        </WorkspaceTabPanel>
 
         {/* Confirmation Banner */}
-        {pendingConfirmation && (
+        {activeTab === 'chat' && pendingConfirmation && (
           <div className="border-t app-border bg-[var(--app-warning-soft)] px-6 py-4">
             <div className="flex items-center gap-4">
               <AlertTriangle className="w-6 h-6 text-warning" />
@@ -375,7 +380,7 @@ export function Chat() {
         )}
 
         {/* Input */}
-        <div className="p-4 border-t app-border">
+        {activeTab === 'chat' && <div className="p-4 border-t app-border">
           <div className="flex gap-3 items-end">
             <textarea
               ref={textareaRef}
@@ -399,7 +404,7 @@ export function Chat() {
           <p className="text-xs text-text-muted mt-2">
             Press Enter to send, Shift+Enter for new line
           </p>
-        </div>
+        </div>}
       </div>
     </div>
   );

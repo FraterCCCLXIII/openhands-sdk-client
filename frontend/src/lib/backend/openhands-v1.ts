@@ -5,14 +5,25 @@ import type {
   Conversation,
   ConversationEvent,
   ConversationStats,
+  GitChange,
   GlobalStats,
+  McpServerInfo,
+  ProductStatus,
+  Repository,
+  RuntimeLink,
   SandboxInfo,
   SecretInfo,
   Settings,
+  SkillInfo,
+  StartTask,
+  SuggestedTask,
+  UserSession,
+  WorkspaceFile,
 } from '../../types';
 import { request } from './http';
 import { saveBackendConnection } from './connection';
 import type { BackendHealth, OpenHandsBackend, SocketEnvelope } from './types';
+import { capabilitiesForMode, UNSUPPORTED_PRODUCT_STATUS } from './capabilities';
 
 interface V1Page<T> {
   items: T[];
@@ -43,6 +54,8 @@ interface V1StartTask {
   status: 'WORKING' | 'READY' | 'ERROR' | string;
   detail: string | null;
   app_conversation_id: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface V1Settings {
@@ -192,6 +205,10 @@ export class OpenHandsV1Backend implements OpenHandsBackend {
     this.prefix = apiPrefix(connection.mode);
   }
 
+  getCapabilities() {
+    return capabilitiesForMode(this.connection.mode);
+  }
+
   protected request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     return request(this.connection.baseUrl, `${this.prefix}${endpoint}`, options, this.connection.authToken);
   }
@@ -199,6 +216,22 @@ export class OpenHandsV1Backend implements OpenHandsBackend {
   async healthCheck(): Promise<BackendHealth> {
     await request(this.connection.baseUrl, '/alive', {}, this.connection.authToken);
     return { status: 'ok', initialized: true, mode: this.connection.mode };
+  }
+
+  async getSession(): Promise<UserSession> {
+    try {
+      const user = await this.request<{ id?: string; email?: string | null; name?: string | null }>('/users/me');
+      return {
+        authenticated: true,
+        user: {
+          id: user.id ?? user.email ?? 'openhands-user',
+          email: user.email ?? null,
+          name: user.name ?? null,
+        },
+      };
+    } catch {
+      return { authenticated: false, user: null };
+    }
   }
 
   async getConfig(): Promise<AppConfig> {
@@ -359,6 +392,103 @@ export class OpenHandsV1Backend implements OpenHandsBackend {
     return sandboxes[0] ?? null;
   }
 
+  async listRepositories(query = ''): Promise<{ repositories: Repository[] }> {
+    const suffix = query ? `&query=${encodeURIComponent(query)}` : '';
+    const page = await this.request<V1Page<Record<string, unknown>>>(`/git/repositories/search?limit=50${suffix}`);
+    return {
+      repositories: page.items.map(item => ({
+        id: String(item.id ?? item.full_name ?? item.name),
+        full_name: String(item.full_name ?? item.name ?? item.repository ?? 'unknown/repository'),
+        provider: typeof item.provider === 'string' ? item.provider : null,
+        default_branch: typeof item.default_branch === 'string' ? item.default_branch : null,
+      })),
+    };
+  }
+
+  async listSuggestedTasks(repository?: string): Promise<{ tasks: SuggestedTask[] }> {
+    const suffix = repository ? `&repository=${encodeURIComponent(repository)}` : '';
+    const page = await this.request<V1Page<Record<string, unknown>>>(`/git/suggested-tasks/search?limit=20${suffix}`);
+    return {
+      tasks: page.items.map(item => ({
+        id: String(item.id ?? item.title ?? crypto.randomUUID()),
+        title: String(item.title ?? item.issue_title ?? 'Suggested task'),
+        description: typeof item.description === 'string' ? item.description : null,
+        repository: typeof item.repository === 'string' ? item.repository : repository ?? null,
+      })),
+    };
+  }
+
+  async listStartTasks(): Promise<{ tasks: StartTask[] }> {
+    const page = await this.request<V1Page<V1StartTask>>('/app-conversations/start-tasks/search?limit=25');
+    return {
+      tasks: page.items.map(task => ({
+        id: task.id,
+        status: task.status,
+        detail: task.detail,
+        conversation_id: task.app_conversation_id,
+      })),
+    };
+  }
+
+  async readWorkspaceFile(conversationId: string, path: string): Promise<WorkspaceFile> {
+    const params = new URLSearchParams({ path });
+    const response = await this.request<{ content?: string; path?: string; language?: string | null }>(
+      `/app-conversations/${conversationId}/file?${params.toString()}`,
+    );
+    return {
+      path: response.path ?? path,
+      content: response.content ?? '',
+      language: response.language ?? null,
+    };
+  }
+
+  async listGitChanges(conversationId: string): Promise<{ changes: GitChange[] }> {
+    const conversation = await this.getConversation(conversationId).catch(() => null);
+    if (!conversation?.conversation_url) return { changes: [] };
+    return { changes: [] };
+  }
+
+  async getRuntimeLinks(conversation: Conversation | null): Promise<{ links: RuntimeLink[] }> {
+    const links: RuntimeLink[] = [];
+    if (conversation?.conversation_url) {
+      links.push({
+        id: 'agent-server',
+        label: 'Agent server',
+        url: conversation.conversation_url,
+        kind: 'agent',
+      });
+    }
+    if (conversation?.sandbox_id) {
+      const sandbox = await this.getSandbox(conversation.sandbox_id).catch(() => null);
+      for (const exposed of sandbox?.exposed_urls ?? []) {
+        const name = exposed.name.toLowerCase();
+        links.push({
+          id: exposed.name,
+          label: exposed.name,
+          url: exposed.url,
+          kind: name.includes('vscode') ? 'vscode' : name.includes('browser') ? 'browser' : 'served',
+        });
+      }
+    }
+    return { links };
+  }
+
+  async listSkills(): Promise<{ skills: SkillInfo[] }> {
+    const page = await this.request<V1Page<Record<string, unknown>>>('/skills/search?limit=100');
+    return {
+      skills: page.items.map(item => ({
+        name: String(item.name ?? 'Unnamed skill'),
+        type: typeof item.type === 'string' ? item.type : undefined,
+        description: typeof item.description === 'string' ? item.description : null,
+        enabled: typeof item.enabled === 'boolean' ? item.enabled : undefined,
+      })),
+    };
+  }
+
+  listMcpServers(): Promise<{ servers: McpServerInfo[] }> {
+    return Promise.resolve({ servers: [] });
+  }
+
   async listSecrets(): Promise<{ secrets: SecretInfo[] }> {
     const page = await this.request<V1Page<{ id?: string; name: string; description?: string | null }>>('/secrets/search?limit=100');
     return {
@@ -387,6 +517,28 @@ export class OpenHandsV1Backend implements OpenHandsBackend {
   async deleteSecret(name: string): Promise<{ status: string }> {
     await this.request(`/secrets/${encodeURIComponent(name)}`, { method: 'DELETE' });
     return { status: 'success' };
+  }
+
+  getBillingStatus(): Promise<ProductStatus> {
+    return Promise.resolve(this.connection.mode === 'cloud'
+      ? { available: true, message: 'Billing is managed by OpenHands SaaS.' }
+      : UNSUPPORTED_PRODUCT_STATUS);
+  }
+
+  getOrganizationStatus(): Promise<ProductStatus> {
+    return Promise.resolve(this.connection.mode === 'cloud'
+      ? { available: true, message: 'Organization management is available through OpenHands SaaS.' }
+      : UNSUPPORTED_PRODUCT_STATUS);
+  }
+
+  getApiKeysStatus(): Promise<ProductStatus> {
+    return Promise.resolve(this.connection.mode === 'cloud'
+      ? { available: true, message: 'API keys are managed by OpenHands SaaS.' }
+      : UNSUPPORTED_PRODUCT_STATUS);
+  }
+
+  getSharedConversation(): Promise<{ conversation: Conversation | null; events: ConversationEvent[] }> {
+    return Promise.resolve({ conversation: null, events: [] });
   }
 
   getWebSocketUrl(conversation: Conversation | null, fallbackConversationId: string): string | null {

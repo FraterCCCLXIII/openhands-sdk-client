@@ -119,6 +119,62 @@ body {
   box-shadow: var(--app-shadow-soft);
 }
 
+.app-view {
+  flex: 1;
+  overflow: auto;
+}
+
+.app-view-content {
+  display: flex;
+  min-height: 100%;
+  width: 100%;
+  max-width: 64rem;
+  margin: 0 auto;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+.app-view-content-wide {
+  max-width: 72rem;
+}
+
+.app-view-content-full {
+  max-width: none;
+}
+
+.app-view-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.app-view-eyebrow {
+  margin: 0;
+  color: var(--app-text-subtle);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.app-view-title {
+  margin: 0;
+  color: var(--app-text);
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.app-view-description {
+  margin: 0;
+  max-width: 42rem;
+  color: var(--app-text-muted);
+  font-size: 0.925rem;
+  line-height: 1.65;
+}
+
 .app-popover {
   border: 1px solid var(--app-border);
   background-color: var(--app-surface-raised);

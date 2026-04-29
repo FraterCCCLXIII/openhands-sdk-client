@@ -125,6 +125,94 @@ export interface SecretInfo {
   value_set: boolean;
 }
 
+export interface BackendCapabilities {
+  sdkRuntime: boolean;
+  appV1: boolean;
+  auth: boolean;
+  billing: boolean;
+  organizations: boolean;
+  invitations: boolean;
+  sharedConversations: boolean;
+  repositories: boolean;
+  suggestedTasks: boolean;
+  startTasks: boolean;
+  files: boolean;
+  gitDiffs: boolean;
+  runtimeLinks: boolean;
+  terminal: boolean;
+  browser: boolean;
+  skills: boolean;
+  mcp: boolean;
+  apiKeys: boolean;
+}
+
+export interface UserSession {
+  authenticated: boolean;
+  user?: {
+    id: string;
+    email?: string | null;
+    name?: string | null;
+  } | null;
+}
+
+export interface Repository {
+  id: string;
+  full_name: string;
+  provider?: string | null;
+  default_branch?: string | null;
+}
+
+export interface SuggestedTask {
+  id: string;
+  title: string;
+  description?: string | null;
+  repository?: string | null;
+}
+
+export interface StartTask {
+  id: string;
+  status: string;
+  detail?: string | null;
+  conversation_id?: string | null;
+}
+
+export interface WorkspaceFile {
+  path: string;
+  content?: string;
+  language?: string | null;
+}
+
+export interface GitChange {
+  path: string;
+  status: 'added' | 'modified' | 'deleted' | 'renamed' | 'unknown';
+  diff?: string | null;
+}
+
+export interface RuntimeLink {
+  id: string;
+  label: string;
+  url: string;
+  kind: 'agent' | 'browser' | 'vscode' | 'served' | 'terminal' | 'other';
+}
+
+export interface SkillInfo {
+  name: string;
+  type?: string;
+  description?: string | null;
+  enabled?: boolean;
+}
+
+export interface McpServerInfo {
+  name: string;
+  status: 'enabled' | 'disabled' | 'unknown';
+  description?: string | null;
+}
+
+export interface ProductStatus {
+  available: boolean;
+  message: string;
+}
+
 // WebSocket message types
 export interface WSMessage {
   type: 'message' | 'confirm' | 'ping';

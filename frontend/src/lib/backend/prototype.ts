@@ -1,14 +1,25 @@
 import type {
   AppConfig,
+  GitChange,
   BackendConnection,
   Conversation,
   ConversationEvent,
   ConversationStats,
   GlobalStats,
+  McpServerInfo,
+  ProductStatus,
+  Repository,
+  RuntimeLink,
   Settings,
+  SkillInfo,
+  StartTask,
+  SuggestedTask,
+  UserSession,
+  WorkspaceFile,
 } from '../../types';
 import { request } from './http';
 import type { BackendHealth, OpenHandsBackend, SocketEnvelope } from './types';
+import { capabilitiesForMode, UNSUPPORTED_PRODUCT_STATUS } from './capabilities';
 
 const API_BASE = '/api';
 
@@ -19,8 +30,16 @@ export class DevSdkBackend implements OpenHandsBackend {
     this.connection = connection;
   }
 
+  getCapabilities() {
+    return capabilitiesForMode(this.connection.mode);
+  }
+
   healthCheck(): Promise<BackendHealth> {
     return request(API_BASE, '/health');
+  }
+
+  getSession(): Promise<UserSession> {
+    return Promise.resolve({ authenticated: true, user: { id: 'local-sdk', name: 'Local SDK User' } });
   }
 
   getConfig(): Promise<AppConfig> {
@@ -102,6 +121,43 @@ export class DevSdkBackend implements OpenHandsBackend {
     });
   }
 
+  listRepositories(): Promise<{ repositories: Repository[] }> {
+    return Promise.resolve({ repositories: [] });
+  }
+
+  listSuggestedTasks(): Promise<{ tasks: SuggestedTask[] }> {
+    return Promise.resolve({ tasks: [] });
+  }
+
+  listStartTasks(): Promise<{ tasks: StartTask[] }> {
+    return Promise.resolve({ tasks: [] });
+  }
+
+  readWorkspaceFile(conversationId: string, path: string): Promise<WorkspaceFile> {
+    void conversationId;
+    return Promise.resolve({
+      path,
+      content: 'Workspace file browsing is not exposed by the SDK prototype facade yet.',
+      language: 'text',
+    });
+  }
+
+  listGitChanges(): Promise<{ changes: GitChange[] }> {
+    return Promise.resolve({ changes: [] });
+  }
+
+  getRuntimeLinks(): Promise<{ links: RuntimeLink[] }> {
+    return Promise.resolve({ links: [] });
+  }
+
+  listSkills(): Promise<{ skills: SkillInfo[] }> {
+    return Promise.resolve({ skills: [] });
+  }
+
+  listMcpServers(): Promise<{ servers: McpServerInfo[] }> {
+    return Promise.resolve({ servers: [] });
+  }
+
   listSecrets(): Promise<{ secrets: [] }> {
     return Promise.resolve({ secrets: [] });
   }
@@ -112,6 +168,22 @@ export class DevSdkBackend implements OpenHandsBackend {
 
   deleteSecret(): Promise<{ status: string }> {
     return Promise.resolve({ status: 'success' });
+  }
+
+  getBillingStatus(): Promise<ProductStatus> {
+    return Promise.resolve(UNSUPPORTED_PRODUCT_STATUS);
+  }
+
+  getOrganizationStatus(): Promise<ProductStatus> {
+    return Promise.resolve(UNSUPPORTED_PRODUCT_STATUS);
+  }
+
+  getApiKeysStatus(): Promise<ProductStatus> {
+    return Promise.resolve(UNSUPPORTED_PRODUCT_STATUS);
+  }
+
+  getSharedConversation(): Promise<{ conversation: Conversation | null; events: ConversationEvent[] }> {
+    return Promise.resolve({ conversation: null, events: [] });
   }
 
   getWebSocketUrl(_conversation: Conversation | null, fallbackConversationId: string): string | null {

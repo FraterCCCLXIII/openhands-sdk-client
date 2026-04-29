@@ -1,9 +1,11 @@
 import type { 
+  BackendCapabilities,
   Conversation, 
   ConversationStats, 
   GlobalStats, 
   AppConfig,
   ConversationEvent,
+  ProductStatus,
   Settings 
 } from '../types';
 import { getBackend, updateBackendConnection } from './backend';
@@ -35,6 +37,14 @@ export function settingsFromConfig(config: AppConfig): Settings {
     has_llm_api_key: config.llm.has_api_key,
     has_openhands_cloud_api_key: config.workspace.has_cloud_api_key,
   };
+}
+
+export function getCapabilities(): BackendCapabilities {
+  return getBackend().getCapabilities();
+}
+
+export async function getSession() {
+  return getBackend().getSession();
 }
 
 // Health check
@@ -127,4 +137,52 @@ export async function saveSecret(secret: { name: string; value?: string; descrip
 
 export async function deleteSecret(name: string) {
   return getBackend().deleteSecret(name);
+}
+
+export async function listRepositories(query?: string) {
+  return getBackend().listRepositories(query);
+}
+
+export async function listSuggestedTasks(repository?: string) {
+  return getBackend().listSuggestedTasks(repository);
+}
+
+export async function listStartTasks() {
+  return getBackend().listStartTasks();
+}
+
+export async function readWorkspaceFile(conversationId: string, path: string) {
+  return getBackend().readWorkspaceFile(conversationId, path);
+}
+
+export async function listGitChanges(conversationId: string) {
+  return getBackend().listGitChanges(conversationId);
+}
+
+export async function getRuntimeLinks(conversation: Conversation | null) {
+  return getBackend().getRuntimeLinks(conversation);
+}
+
+export async function listSkills() {
+  return getBackend().listSkills();
+}
+
+export async function listMcpServers() {
+  return getBackend().listMcpServers();
+}
+
+export async function getBillingStatus(): Promise<ProductStatus> {
+  return getBackend().getBillingStatus();
+}
+
+export async function getOrganizationStatus(): Promise<ProductStatus> {
+  return getBackend().getOrganizationStatus();
+}
+
+export async function getApiKeysStatus(): Promise<ProductStatus> {
+  return getBackend().getApiKeysStatus();
+}
+
+export async function getSharedConversation(id: string) {
+  return getBackend().getSharedConversation(id);
 }
