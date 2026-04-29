@@ -2,14 +2,25 @@
 
 A custom chat interface and dashboard for interacting with OpenHands agents using the [OpenHands SDK](https://docs.openhands.dev/sdk).
 
+Built with **React + Vite + TypeScript + Tailwind CSS** for a modern, type-safe frontend.
+
 ## Features
 
 - 🖥️ **Dashboard** - Overview of all conversations with statistics
 - 💬 **Chat Interface** - Real-time messaging with WebSocket support
+- ⚙️ **Settings UI** - Configure LLM API key, model, and security policies in the browser
 - 📊 **Metrics** - Track tokens, costs, and tool usage
 - 🔒 **Security Policies** - Configurable action confirmation
 - 💾 **Persistence** - Save and restore conversation state
 - 🔌 **Multiple Workspaces** - Support for local, Docker, remote, and cloud workspaces
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| **Frontend** | React 18, TypeScript, Tailwind CSS v4, Vite, React Router, Lucide Icons |
+| **Backend** | FastAPI, WebSocket, Pydantic |
+| **SDK** | OpenHands SDK, OpenHands Tools |
 
 ## Architecture
 
@@ -17,15 +28,19 @@ A custom chat interface and dashboard for interacting with OpenHands agents usin
 ┌─────────────────────────────────────────────────────────────────┐
 │                    OpenHands Client                              │
 ├─────────────────────────────────────────────────────────────────┤
-│  Frontend (HTML/CSS/JS)                                         │
-│  ├── Dashboard (index.html)                                      │
+│  Frontend (React + TypeScript + Tailwind)                       │
+│  ├── Dashboard                                                   │
 │  │   ├── Stats overview                                          │
 │  │   ├── Configuration display                                   │
 │  │   └── Conversation list                                       │
-│  └── Chat Interface (chat.html)                                  │
-│      ├── Message display                                         │
-│      ├── Tool call visualization                                 │
-│      └── Action confirmation                                     │
+│  ├── Chat Interface                                              │
+│  │   ├── Real-time messaging (WebSocket)                         │
+│  │   ├── Tool call visualization                                 │
+│  │   └── Action confirmation                                     │
+│  └── Settings Modal                                              │
+│      ├── LLM API key configuration                               │
+│      ├── Model selection                                         │
+│      └── Security policy settings                                │
 ├─────────────────────────────────────────────────────────────────┤
 │  Backend (FastAPI)                                               │
 │  ├── REST API endpoints                                          │
@@ -147,31 +162,59 @@ Open your browser to:
 
 ```
 openhands-client/
-├── openhands_client/          # Python client library
+├── frontend/                  # React frontend (Vite + TypeScript + Tailwind)
+│   ├── src/
+│   │   ├── components/        # React components
+│   │   │   ├── Layout.tsx     # App shell with navbar
+│   │   │   ├── SettingsModal.tsx # LLM configuration modal
+│   │   │   └── NewChatModal.tsx  # Create conversation modal
+│   │   ├── pages/
+│   │   │   ├── Dashboard.tsx  # Main dashboard page
+│   │   │   └── Chat.tsx       # Chat interface page
+│   │   ├── hooks/
+│   │   │   └── useWebSocket.ts # WebSocket connection hook
+│   │   ├── lib/
+│   │   │   └── api.ts         # API client with TypeScript types
+│   │   ├── types/
+│   │   │   └── index.ts       # TypeScript type definitions
+│   │   ├── App.tsx            # Root component with routing
+│   │   └── index.css          # Tailwind CSS imports
+│   ├── dist/                  # Production build (included)
+│   ├── package.json           # npm dependencies
+│   └── vite.config.ts         # Vite configuration
+├── openhands_client/          # Python SDK wrapper
 │   ├── __init__.py            # Package exports
 │   ├── client.py              # Main OpenHands client
 │   ├── config.py              # Configuration management
 │   ├── conversation_manager.py # Multi-conversation support
 │   └── event_handler.py       # SDK event processing
-├── static/                    # Frontend assets
-│   ├── css/
-│   │   └── style.css          # Styles
-│   └── js/
-│       ├── api.js             # API client
-│       ├── dashboard.js       # Dashboard logic
-│       └── chat.js            # Chat interface
-├── templates/                 # Jinja2 templates
-│   ├── base.html              # Base template
-│   ├── index.html             # Dashboard
-│   └── chat.html              # Chat interface
-├── conversations/             # Conversation persistence
-├── server.py                  # FastAPI server
-├── pyproject.toml             # Project config
-├── .env.example               # Example config
+├── templates/                 # Fallback Jinja2 templates
+├── static/                    # Fallback static assets
+├── server.py                  # Full FastAPI server (with SDK)
+├── server_standalone.py       # Demo server (works without SDK)
+├── pyproject.toml             # Python dependencies
+├── .env.example               # Configuration template
 └── README.md                  # This file
 ```
 
 ## Development
+
+### Frontend Development
+
+```bash
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start dev server (with hot reload)
+npm run dev
+
+# Build for production
+npm run build
+
+# The dev server proxies /api and /ws to localhost:12000
+```
 
 ### Adding Custom Tools
 
