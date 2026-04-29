@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}OpenHands Client{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <div id="app">
+        <nav class="navbar">
+            <div class="navbar-brand">
+                <a href="/" class="logo">
+                    <span class="logo-icon">🤖</span>
+                    <span class="logo-text">OpenHands Client</span>
+                </a>
+            </div>
+            <div class="navbar-menu">
+                <a href="/" class="nav-link">Dashboard</a>
+                <a href="#" class="nav-link" id="new-chat-btn">New Chat</a>
+            </div>
+        </nav>
+        
+        <main class="main-content">
+            {% block content %}{% endblock %}
+        </main>
+        
+        <footer class="footer">
+            <p>OpenHands Client v0.1.0 | Powered by <a href="https://docs.openhands.dev/sdk" target="_blank">OpenHands SDK</a></p>
+        </footer>
+    </div>
+    
+    <script src="/static/js/api.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

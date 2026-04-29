@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - OpenHands Client{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <!-- Stats Cards -->
+    <section class="stats-section">
+        <h2>Overview</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">💬</div>
+                <div class="stat-value" id="total-conversations">-</div>
+                <div class="stat-label">Total Conversations</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🟢</div>
+                <div class="stat-value" id="active-conversations">-</div>
+                <div class="stat-label">Active Conversations</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📝</div>
+                <div class="stat-value" id="total-messages">-</div>
+                <div class="stat-label">Total Messages</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🔧</div>
+                <div class="stat-value" id="total-tool-calls">-</div>
+                <div class="stat-label">Tool Calls</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-value" id="total-cost">$0.00</div>
+                <div class="stat-label">Total Cost</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⚠️</div>
+                <div class="stat-value" id="total-errors">-</div>
+                <div class="stat-label">Errors</div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Configuration Panel -->
+    <section class="config-section">
+        <h2>Configuration</h2>
+        <div class="config-grid">
+            <div class="config-item">
+                <label>LLM Model</label>
+                <span id="config-llm-model">-</span>
+            </div>
+            <div class="config-item">
+                <label>Workspace Type</label>
+                <span id="config-workspace-type">-</span>
+            </div>
+            <div class="config-item">
+                <label>Security Policy</label>
+                <span id="config-security-policy">-</span>
+            </div>
+            <div class="config-item">
+                <label>Browser Tools</label>
+                <span id="config-browser-tools">-</span>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Conversations List -->
+    <section class="conversations-section">
+        <div class="section-header">
+            <h2>Conversations</h2>
+            <button class="btn btn-primary" id="create-conversation-btn">
+                + New Conversation
+            </button>
+        </div>
+        
+        <div class="conversations-list" id="conversations-list">
+            <div class="loading">Loading conversations...</div>
+        </div>
+    </section>
+</div>
+
+<!-- New Conversation Modal -->
+<div class="modal" id="new-conversation-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>New Conversation</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="conversation-title">Title (optional)</label>
+                <input type="text" id="conversation-title" placeholder="Enter conversation title...">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary modal-cancel">Cancel</button>
+            <button class="btn btn-primary" id="create-conversation-submit">Create</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/dashboard.js"></script>
+{% endblock %}

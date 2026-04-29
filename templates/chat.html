@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Chat - OpenHands Client{% endblock %}
+
+{% block content %}
+<div class="chat-container">
+    <!-- Sidebar -->
+    <aside class="chat-sidebar">
+        <div class="conversation-info">
+            <h3 id="conversation-title">Loading...</h3>
+            <span class="conversation-status" id="conversation-status">-</span>
+        </div>
+        
+        <div class="conversation-stats">
+            <h4>Statistics</h4>
+            <div class="stats-list">
+                <div class="stat-item">
+                    <span class="stat-name">Messages</span>
+                    <span class="stat-value" id="stat-messages">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-name">Tool Calls</span>
+                    <span class="stat-value" id="stat-tool-calls">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-name">Tokens</span>
+                    <span class="stat-value" id="stat-tokens">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-name">Cost</span>
+                    <span class="stat-value" id="stat-cost">$0.00</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="conversation-actions">
+            <button class="btn btn-small" id="pause-btn" title="Pause Conversation">⏸️ Pause</button>
+            <button class="btn btn-small" id="resume-btn" title="Resume Conversation" style="display:none;">▶️ Resume</button>
+            <button class="btn btn-small btn-danger" id="stop-btn" title="Stop Conversation">⏹️ Stop</button>
+        </div>
+    </aside>
+    
+    <!-- Main Chat Area -->
+    <div class="chat-main">
+        <div class="messages-container" id="messages-container">
+            <div class="welcome-message">
+                <div class="welcome-icon">🤖</div>
+                <h2>Start a conversation</h2>
+                <p>Send a message to begin interacting with the OpenHands agent.</p>
+            </div>
+        </div>
+        
+        <!-- Confirmation Banner -->
+        <div class="confirmation-banner" id="confirmation-banner" style="display:none;">
+            <div class="confirmation-content">
+                <div class="confirmation-icon">⚠️</div>
+                <div class="confirmation-text">
+                    <strong>Action requires confirmation</strong>
+                    <p id="confirmation-details">The agent wants to perform an action.</p>
+                </div>
+                <div class="confirmation-actions">
+                    <button class="btn btn-success" id="confirm-approve">Approve</button>
+                    <button class="btn btn-danger" id="confirm-reject">Reject</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Input Area -->
+        <div class="input-container">
+            <div class="input-wrapper">
+                <textarea 
+                    id="message-input" 
+                    placeholder="Send a message..." 
+                    rows="1"
+                    autofocus
+                ></textarea>
+                <button class="send-btn" id="send-btn" title="Send message">
+                    <span class="send-icon">➤</span>
+                </button>
+            </div>
+            <div class="input-hint">
+                Press Enter to send, Shift+Enter for new line
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const CONVERSATION_ID = "{{ conversation_id }}";
+</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/chat.js"></script>
+{% endblock %}
