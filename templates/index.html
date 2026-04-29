@@ -4,6 +4,20 @@
 
 {% block content %}
 <div class="dashboard">
+    <!-- Setup Banner (shown when no API key) -->
+    <section class="setup-banner" id="setup-banner" style="display: none;">
+        <div class="setup-content">
+            <div class="setup-icon">🔑</div>
+            <div class="setup-text">
+                <h3>Configure Your LLM Provider</h3>
+                <p>Set up your API key and model to start using OpenHands with real AI capabilities.</p>
+            </div>
+            <button class="btn btn-primary" id="open-settings-btn">
+                ⚙️ Open Settings
+            </button>
+        </div>
+    </section>
+
     <!-- Stats Cards -->
     <section class="stats-section">
         <h2>Overview</h2>
@@ -95,6 +109,98 @@
         <div class="modal-footer">
             <button class="btn btn-secondary modal-cancel">Cancel</button>
             <button class="btn btn-primary" id="create-conversation-submit">Create</button>
+        </div>
+    </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal" id="settings-modal">
+    <div class="modal-content modal-lg">
+        <div class="modal-header">
+            <h3>⚙️ Settings</h3>
+            <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="settings-section">
+                <h4>🤖 LLM Configuration</h4>
+                <p class="settings-description">Configure your language model provider and API credentials.</p>
+                
+                <div class="form-group">
+                    <label for="settings-llm-model">Model</label>
+                    <select id="settings-llm-model">
+                        <optgroup label="Anthropic">
+                            <option value="anthropic/claude-sonnet-4-5-20250929">Claude Sonnet 4.5</option>
+                            <option value="anthropic/claude-opus-4-0-20250514">Claude Opus 4</option>
+                            <option value="anthropic/claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
+                            <option value="anthropic/claude-3-5-haiku-20241022">Claude 3.5 Haiku</option>
+                        </optgroup>
+                        <optgroup label="OpenAI">
+                            <option value="openai/gpt-4o">GPT-4o</option>
+                            <option value="openai/gpt-4o-mini">GPT-4o Mini</option>
+                            <option value="openai/gpt-4-turbo">GPT-4 Turbo</option>
+                            <option value="openai/o1-preview">o1-preview</option>
+                        </optgroup>
+                        <optgroup label="OpenHands Cloud">
+                            <option value="openhands/claude-sonnet-4-5-20250929">OH Claude Sonnet 4.5</option>
+                            <option value="openhands/claude-3-5-sonnet-20241022">OH Claude 3.5 Sonnet</option>
+                        </optgroup>
+                        <optgroup label="Other">
+                            <option value="custom">Custom Model...</option>
+                        </optgroup>
+                    </select>
+                </div>
+                
+                <div class="form-group" id="custom-model-group" style="display: none;">
+                    <label for="settings-custom-model">Custom Model Name</label>
+                    <input type="text" id="settings-custom-model" placeholder="e.g., mistral/mistral-large">
+                </div>
+                
+                <div class="form-group">
+                    <label for="settings-api-key">API Key</label>
+                    <div class="input-with-toggle">
+                        <input type="password" id="settings-api-key" placeholder="sk-... or your API key">
+                        <button type="button" class="toggle-visibility" id="toggle-api-key">👁️</button>
+                    </div>
+                    <span class="form-hint">Your API key is stored in browser localStorage and sent to the server for each request.</span>
+                </div>
+                
+                <div class="form-group">
+                    <label for="settings-base-url">Base URL (optional)</label>
+                    <input type="text" id="settings-base-url" placeholder="https://api.example.com/v1">
+                    <span class="form-hint">For custom API endpoints or proxies. Leave empty for default.</span>
+                </div>
+            </div>
+            
+            <div class="settings-section">
+                <h4>🛡️ Security</h4>
+                <div class="form-group">
+                    <label for="settings-security-policy">Confirmation Policy</label>
+                    <select id="settings-security-policy">
+                        <option value="confirm_risky">Confirm Risky Actions</option>
+                        <option value="always_confirm">Always Confirm</option>
+                        <option value="never_confirm">Never Confirm (Auto-execute)</option>
+                    </select>
+                    <span class="form-hint">Controls when the agent asks for permission before executing actions.</span>
+                </div>
+            </div>
+            
+            <div class="settings-section">
+                <h4>🖥️ Workspace</h4>
+                <div class="form-group">
+                    <label for="settings-workspace-type">Workspace Type</label>
+                    <select id="settings-workspace-type">
+                        <option value="local">Local (Direct filesystem)</option>
+                        <option value="docker">Docker (Isolated container)</option>
+                        <option value="cloud">OpenHands Cloud</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="settings-status" id="settings-status"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary modal-cancel">Cancel</button>
+            <button class="btn btn-primary" id="save-settings-btn">💾 Save Settings</button>
         </div>
     </div>
 </div>

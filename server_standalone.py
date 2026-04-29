@@ -274,19 +274,34 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+# Check if React frontend build exists
+from pathlib import Path
+frontend_dist = Path(__file__).parent / "frontend" / "dist"
+use_react = frontend_dist.exists()
+
+if use_react:
+    # Serve React build assets
+    app.mount("/assets", StaticFiles(directory=frontend_dist / "assets"), name="assets")
+else:
+    # Fallback to old static files
+    if Path("static").exists():
+        app.mount("/static", StaticFiles(directory="static"), name="static")
+    templates = Jinja2Templates(directory="templates")
 
 
 # ==================== HTML Routes ====================
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
+    if use_react:
+        return HTMLResponse(content=(frontend_dist / "index.html").read_text())
     return templates.TemplateResponse("index.html", {"request": request})
 
 
 @app.get("/chat/{conversation_id}", response_class=HTMLResponse)
 async def chat_page(request: Request, conversation_id: str):
+    if use_react:
+        return HTMLResponse(content=(frontend_dist / "index.html").read_text())
     return templates.TemplateResponse("chat.html", {
         "request": request,
         "conversation_id": conversation_id,

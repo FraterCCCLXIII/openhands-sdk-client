@@ -1,0 +1,92 @@
+// Conversation types
+export interface Conversation {
+  id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+  message_count: number;
+  total_cost: number;
+  status: 'active' | 'paused' | 'completed' | 'error';
+  workspace_type: string;
+}
+
+export interface ConversationStats {
+  total_messages: number;
+  user_messages: number;
+  assistant_messages: number;
+  tool_calls: number;
+  total_tokens: number;
+  input_tokens: number;
+  output_tokens: number;
+  accumulated_cost: number;
+  average_response_time: number;
+  errors: number;
+}
+
+export interface GlobalStats {
+  total_conversations: number;
+  active_conversations: number;
+  total_messages: number;
+  total_cost: number;
+  total_tool_calls: number;
+  total_errors: number;
+}
+
+// Event types
+export type EventType = 'message' | 'action' | 'observation' | 'state_update' | 'error' | 'confirmation_request';
+
+export interface ConversationEvent {
+  id: string;
+  type: EventType;
+  timestamp: string;
+  source: 'user' | 'assistant' | 'agent' | 'environment';
+  content: Record<string, unknown>;
+}
+
+// Config types
+export interface LLMConfig {
+  model: string;
+  base_url: string | null;
+  has_api_key: boolean;
+}
+
+export interface WorkspaceConfig {
+  type: string;
+  working_dir: string;
+  host?: string;
+}
+
+export interface AppConfig {
+  llm: LLMConfig;
+  workspace: WorkspaceConfig;
+  security_policy: string;
+  persistence_dir: string;
+  enable_browser_tools: boolean;
+  enable_metrics: boolean;
+  max_context_size: number;
+}
+
+// Settings (client-side with secrets)
+export interface Settings {
+  llm_model: string;
+  llm_api_key: string;
+  llm_base_url: string;
+  workspace_type: string;
+  security_policy: string;
+}
+
+// WebSocket message types
+export interface WSMessage {
+  type: 'message' | 'confirm' | 'ping';
+  content?: string;
+  approved?: boolean;
+}
+
+export interface WSResponse {
+  type: 'history' | 'event' | 'complete' | 'error' | 'ack' | 'pong' | 'confirmed';
+  events?: ConversationEvent[];
+  event?: ConversationEvent;
+  error?: string;
+  message?: string;
+  approved?: boolean;
+}

@@ -1,0 +1,149 @@
+import { useEffect, useRef, useCallback, useState } from 'react';
+import type { ConversationEvent, WSResponse } from '../types';
+
+interface UseWebSocketOptions {
+  onHistory?: (events: ConversationEvent[]) => void;
+  onEvent?: (event: ConversationEvent) => void;
+  onComplete?: (events: ConversationEvent[]) => void;
+  onError?: (error: string) => void;
+  onConnect?: () => void;
+  onDisconnect?: () => void;
+}
+
+export function useWebSocket(conversationId: string, options: UseWebSocketOptions = {}) {
+  const wsRef = useRef<WebSocket | null>(null);
+  const reconnectAttemptsRef = useRef(0);
+  const pingIntervalRef = useRef<number | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const connect = useCallback(() => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) return;
+
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/ws/${conversationId}`;
+    
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      console.log('WebSocket connected');
+      reconnectAttemptsRef.current = 0;
+      setIsConnected(true);
+      options.onConnect?.();
+      
+      // Start ping interval
+      pingIntervalRef.current = window.setInterval(() => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'ping' }));
+        }
+      }, 30000);
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const data: WSResponse = JSON.parse(event.data);
+        handleMessage(data);
+      } catch (error) {
+        console.error('WebSocket message parse error:', error);
+      }
+    };
+
+    ws.onclose = () => {
+      console.log('WebSocket disconnected');
+      setIsConnected(false);
+      if (pingIntervalRef.current) {
+        clearInterval(pingIntervalRef.current);
+      }
+      options.onDisconnect?.();
+      attemptReconnect();
+    };
+
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+      options.onError?.('Connection error');
+    };
+  }, [conversationId, options]);
+
+  const handleMessage = useCallback((data: WSResponse) => {
+    switch (data.type) {
+      case 'history':
+        options.onHistory?.(data.events || []);
+        break;
+      case 'event':
+        if (data.event) {
+          options.onEvent?.(data.event);
+        }
+        break;
+      case 'complete':
+        setIsProcessing(false);
+        options.onComplete?.(data.events || []);
+        break;
+      case 'error':
+        setIsProcessing(false);
+        options.onError?.(data.error || 'Unknown error');
+        break;
+      case 'ack':
+        // Message acknowledged
+        break;
+      case 'pong':
+        // Ping response
+        break;
+      case 'confirmed':
+        options.onEvent?.({
+          id: `evt_confirm_${Date.now()}`,
+          type: 'state_update',
+          timestamp: new Date().toISOString(),
+          source: 'environment',
+          content: { state: data.approved ? 'approved' : 'rejected' },
+        });
+        break;
+    }
+  }, [options]);
+
+  const attemptReconnect = useCallback(() => {
+    const maxAttempts = 5;
+    if (reconnectAttemptsRef.current < maxAttempts) {
+      reconnectAttemptsRef.current++;
+      const delay = 1000 * reconnectAttemptsRef.current;
+      console.log(`Attempting reconnect in ${delay}ms...`);
+      setTimeout(connect, delay);
+    }
+  }, [connect]);
+
+  const sendMessage = useCallback((content: string) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      setIsProcessing(true);
+      wsRef.current.send(JSON.stringify({ type: 'message', content }));
+    }
+  }, []);
+
+  const confirmAction = useCallback((approved: boolean) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: 'confirm', approved }));
+    }
+  }, []);
+
+  const disconnect = useCallback(() => {
+    if (pingIntervalRef.current) {
+      clearInterval(pingIntervalRef.current);
+    }
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    connect();
+    return () => disconnect();
+  }, [connect, disconnect]);
+
+  return {
+    isConnected,
+    isProcessing,
+    sendMessage,
+    confirmAction,
+    disconnect,
+  };
+}
