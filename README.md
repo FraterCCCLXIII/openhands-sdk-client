@@ -1,6 +1,6 @@
 # OpenHands Client Dashboard
 
-A custom chat interface and dashboard for interacting with OpenHands agents using the [OpenHands SDK](https://docs.openhands.dev/sdk).
+A lean chat interface and dashboard for interacting with OpenHands through a selectable backend adapter: the current SDK prototype, an already-running local OpenHands Main server, or OpenHands Cloud.
 
 Built with **React + Vite + TypeScript + Tailwind CSS** for a modern, type-safe frontend.
 
@@ -8,11 +8,11 @@ Built with **React + Vite + TypeScript + Tailwind CSS** for a modern, type-safe 
 
 - 🖥️ **Dashboard** - Overview of all conversations with statistics
 - 💬 **Chat Interface** - Real-time messaging with WebSocket support
-- ⚙️ **Settings UI** - Configure LLM API key, model, and security policies in the browser
+- ⚙️ **Settings UI** - Configure backend target, redacted LLM credentials, custom secrets, model, and security policies
 - 📊 **Metrics** - Track tokens, costs, and tool usage
 - 🔒 **Security Policies** - Configurable action confirmation
 - 💾 **Persistence** - Save and restore conversation state
-- 🔌 **Multiple Workspaces** - Support for local, Docker, remote, and cloud workspaces
+- 🔌 **Multiple Backends** - Support for prototype, local OpenHands Main, and OpenHands Cloud targets
 
 ## Tech Stack
 
@@ -38,17 +38,14 @@ Built with **React + Vite + TypeScript + Tailwind CSS** for a modern, type-safe 
 │  │   ├── Tool call visualization                                 │
 │  │   └── Action confirmation                                     │
 │  └── Settings Modal                                              │
-│      ├── LLM API key configuration                               │
-│      ├── Model selection                                         │
+│      ├── Backend target selection                                │
+│      ├── Redacted settings and secrets                           │
 │      └── Security policy settings                                │
 ├─────────────────────────────────────────────────────────────────┤
-│  Backend (FastAPI)                                               │
-│  ├── REST API endpoints                                          │
-│  │   ├── /api/conversations - CRUD operations                    │
-│  │   ├── /api/stats - Global statistics                          │
-│  │   └── /api/config - Configuration                             │
-│  └── WebSocket endpoint                                          │
-│      └── /ws/{conversation_id} - Real-time updates               │
+│  Frontend Backend Adapters                                       │
+│  ├── DevSdkBackend - existing /api + /ws prototype server         │
+│  ├── LocalOpenHandsBackend - OpenHands Main /api/v1 routes        │
+│  └── CloudOpenHandsBackend - configurable cloud URL + auth        │
 ├─────────────────────────────────────────────────────────────────┤
 │  Client Library (openhands_client)                               │
 │  ├── OpenHandsClient - Main SDK wrapper                          │
@@ -123,6 +120,18 @@ Open your browser to:
 `server.py` serves the built React app from `frontend/dist` when present. The
 legacy `templates/` and `static/` UI remains as a fallback for development.
 
+### Backend Modes
+
+Use Settings → Backend Connection to choose:
+
+| Mode | Description |
+|------|-------------|
+| `prototype` | Uses this repo's FastAPI SDK server under `/api` and `/ws` |
+| `local` | Connects to OpenHands Main at `http://localhost:3000` by default and uses `/api/v1` |
+| `cloud` | Connects to a configurable OpenHands Cloud base URL with a session auth token |
+
+Only backend mode and base URL are persisted in browser storage. Auth tokens and secret values use OpenHands-style redaction: blank means keep the current value, and values are not read back into the client.
+
 ### API Endpoints
 
 | Endpoint | Method | Description |
@@ -180,7 +189,8 @@ openhands-client/
 │   │   ├── hooks/
 │   │   │   └── useWebSocket.ts # WebSocket connection hook
 │   │   ├── lib/
-│   │   │   └── api.ts         # API client with TypeScript types
+│   │   │   ├── api.ts         # Adapter-backed API facade
+│   │   │   └── backend/       # Backend interface and concrete adapters
 │   │   ├── types/
 │   │   │   └── index.ts       # TypeScript type definitions
 │   │   ├── App.tsx            # Root component with routing
@@ -218,6 +228,9 @@ npm run dev
 
 # Build for production
 npm run build
+
+# Run adapter contract tests
+npm run test
 
 # The dev server proxies /api and /ws to localhost:12000
 ```

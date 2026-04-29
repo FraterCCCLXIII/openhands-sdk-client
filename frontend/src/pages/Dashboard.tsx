@@ -84,9 +84,11 @@ export function Dashboard({ onOpenSettings }: DashboardProps) {
     <div className="space-y-8">
       {/* Setup Banner */}
       {showSetupBanner && (
-        <section className="bg-gradient-to-r from-primary/20 to-primary/10 border border-primary/30 rounded-xl p-6">
+        <section className="app-card rounded-xl bg-[var(--app-accent-soft)] p-6">
           <div className="flex items-center gap-6">
-            <div className="text-4xl">🔑</div>
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--app-surface-raised)] text-primary">
+              <Key className="h-6 w-6" />
+            </div>
             <div className="flex-1">
               <h3 className="text-lg font-semibold text-text-primary mb-1">
                 Configure Your LLM Provider
@@ -97,7 +99,7 @@ export function Dashboard({ onOpenSettings }: DashboardProps) {
             </div>
             <button
               onClick={onOpenSettings}
-              className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-lg transition-colors"
+              className="app-button-accent flex items-center gap-2 rounded-lg px-4 py-2"
             >
               <Key className="w-4 h-4" />
               Open Settings
@@ -113,7 +115,7 @@ export function Dashboard({ onOpenSettings }: DashboardProps) {
           {statCards.map((stat, index) => (
             <div 
               key={index}
-              className="bg-surface border border-border rounded-xl p-5 text-center hover:border-primary/50 transition-colors"
+              className="app-card rounded-xl p-5 text-center transition-colors hover:border-primary"
             >
               <stat.icon className={`w-8 h-8 mx-auto mb-2 ${stat.color}`} />
               <div className="text-2xl font-bold text-text-primary">{stat.value}</div>
@@ -127,25 +129,25 @@ export function Dashboard({ onOpenSettings }: DashboardProps) {
       <section>
         <h2 className="text-xl font-semibold mb-4">Configuration</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-surface border border-border rounded-lg p-4">
+          <div className="app-card rounded-lg p-4">
             <div className="text-xs text-text-muted uppercase tracking-wider mb-1">LLM Model</div>
             <div className="text-text-primary font-mono text-sm truncate">
               {config?.llm.model ?? '-'}
             </div>
           </div>
-          <div className="bg-surface border border-border rounded-lg p-4">
+          <div className="app-card rounded-lg p-4">
             <div className="text-xs text-text-muted uppercase tracking-wider mb-1">Workspace Type</div>
             <div className="text-text-primary font-mono text-sm">
               {config?.workspace.type ?? '-'}
             </div>
           </div>
-          <div className="bg-surface border border-border rounded-lg p-4">
+          <div className="app-card rounded-lg p-4">
             <div className="text-xs text-text-muted uppercase tracking-wider mb-1">Security Policy</div>
             <div className="text-text-primary font-mono text-sm">
               {config?.security_policy ?? '-'}
             </div>
           </div>
-          <div className="bg-surface border border-border rounded-lg p-4">
+          <div className="app-card rounded-lg p-4">
             <div className="text-xs text-text-muted uppercase tracking-wider mb-1">Browser Tools</div>
             <div className="text-text-primary font-mono text-sm">
               {config?.enable_browser_tools ? 'Enabled' : 'Disabled'}
@@ -169,7 +171,7 @@ export function Dashboard({ onOpenSettings }: DashboardProps) {
               <Link
                 key={conv.id}
                 to={`/chat/${conv.id}`}
-                className="flex items-center justify-between bg-surface border border-border rounded-lg px-6 py-4 hover:bg-surface-hover hover:border-primary transition-colors group"
+                className="app-card group flex items-center justify-between rounded-lg px-6 py-4 transition-colors hover:border-primary hover:bg-surface-hover"
               >
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-text-primary truncate">
@@ -177,10 +179,10 @@ export function Dashboard({ onOpenSettings }: DashboardProps) {
                   </div>
                   <div className="flex items-center gap-4 mt-1 text-xs text-text-muted">
                     <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                      conv.status === 'active' ? 'bg-success/20 text-success' :
-                      conv.status === 'paused' ? 'bg-warning/20 text-warning' :
-                      conv.status === 'completed' ? 'bg-secondary/20 text-secondary' :
-                      'bg-danger/20 text-danger'
+                      conv.status === 'active' ? 'app-status-success' :
+                      conv.status === 'paused' ? 'app-status-warning' :
+                      conv.status === 'completed' ? 'app-status-neutral' :
+                      'app-status-danger'
                     }`}>
                       {conv.status}
                     </span>

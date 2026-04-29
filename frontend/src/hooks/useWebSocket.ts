@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
-import type { ConversationEvent, WSResponse } from '../types';
+import { getBackend } from '../lib/backend';
+import type { Conversation, ConversationEvent, WSResponse } from '../types';
 
 interface UseWebSocketOptions {
   onHistory?: (events: ConversationEvent[]) => void;
@@ -10,7 +11,7 @@ interface UseWebSocketOptions {
   onDisconnect?: () => void;
 }
 
-export function useWebSocket(conversationId: string, options: UseWebSocketOptions = {}) {
+export function useWebSocket(conversationId: string, conversation: Conversation | null, options: UseWebSocketOptions = {}) {
   const wsRef = useRef<WebSocket | null>(null);
   const optionsRef = useRef(options);
   const connectRef = useRef<() => void>(() => {});
@@ -72,8 +73,8 @@ export function useWebSocket(conversationId: string, options: UseWebSocketOption
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws/${conversationId}`;
+    const wsUrl = getBackend().getWebSocketUrl(conversation, conversationId);
+    if (!wsUrl) return;
     
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
@@ -94,7 +95,7 @@ export function useWebSocket(conversationId: string, options: UseWebSocketOption
 
     ws.onmessage = (event) => {
       try {
-        const data: WSResponse = JSON.parse(event.data);
+        const data = getBackend().normalizeSocketMessage(JSON.parse(event.data)) as WSResponse;
         handleMessage(data);
       } catch (error) {
         console.error('WebSocket message parse error:', error);
@@ -115,7 +116,7 @@ export function useWebSocket(conversationId: string, options: UseWebSocketOption
       console.error('WebSocket error:', error);
       optionsRef.current.onError?.('Connection error');
     };
-  }, [attemptReconnect, conversationId, handleMessage]);
+  }, [attemptReconnect, conversation, conversationId, handleMessage]);
 
   useEffect(() => {
     connectRef.current = connect;
@@ -124,7 +125,7 @@ export function useWebSocket(conversationId: string, options: UseWebSocketOption
   const sendMessage = useCallback((content: string) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       setIsProcessing(true);
-      wsRef.current.send(JSON.stringify({ type: 'message', content }));
+      wsRef.current.send(JSON.stringify(getBackend().buildSocketMessage(content)));
     }
   }, []);
 

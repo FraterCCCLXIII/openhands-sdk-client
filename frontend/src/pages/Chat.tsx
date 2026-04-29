@@ -93,6 +93,7 @@ export function Chat() {
 
   const { isConnected, isProcessing, sendMessage: wsSendMessage, confirmAction } = useWebSocket(
     id || '',
+    conversation,
     {
       onHistory: handleHistory,
       onEvent: handleEvent,
@@ -196,13 +197,13 @@ export function Chat() {
     
     const baseClasses = 'max-w-[85%] rounded-xl p-4';
     const messageClasses = isUser 
-      ? `${baseClasses} bg-primary text-white self-end`
+      ? `${baseClasses} app-button-accent self-end`
       : type === 'action'
-      ? `${baseClasses} bg-primary/10 border border-primary/30 self-start`
+      ? `${baseClasses} border border-primary bg-[var(--app-accent-soft)] self-start`
       : type === 'observation'
-      ? `${baseClasses} bg-success/10 border border-success/30 self-start`
+      ? `${baseClasses} app-status-success self-start`
       : type === 'error'
-      ? `${baseClasses} bg-danger/10 border border-danger/30 self-start`
+      ? `${baseClasses} app-status-danger self-start`
       : `${baseClasses} bg-surface-hover self-start`;
 
     const icon = isUser ? <User className="w-4 h-4" /> :
@@ -256,16 +257,16 @@ export function Chat() {
   return (
     <div className="flex gap-4 h-[calc(100vh-180px)]">
       {/* Sidebar */}
-      <aside className="w-72 bg-surface border border-border rounded-xl p-5 flex flex-col gap-6">
+      <aside className="app-card w-72 rounded-xl p-5 flex flex-col gap-6">
         <div>
           <h3 className="font-medium text-text-primary truncate">
             {conversation?.title || 'Loading...'}
           </h3>
           <span className={`inline-block mt-2 px-2 py-0.5 rounded text-xs font-medium ${
-            conversation?.status === 'active' ? 'bg-success/20 text-success' :
-            conversation?.status === 'paused' ? 'bg-warning/20 text-warning' :
-            conversation?.status === 'completed' ? 'bg-secondary/20 text-secondary' :
-            'bg-danger/20 text-danger'
+            conversation?.status === 'active' ? 'app-status-success' :
+            conversation?.status === 'paused' ? 'app-status-warning' :
+            conversation?.status === 'completed' ? 'app-status-neutral' :
+            'app-status-danger'
           }`}>
             {conversation?.status || '-'}
           </span>
@@ -300,21 +301,21 @@ export function Chat() {
           {conversation?.status === 'paused' ? (
             <button 
               onClick={handleResume}
-              className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-surface-hover hover:bg-border rounded-lg text-sm transition-colors"
+              className="app-button-subtle flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-lg text-sm"
             >
               <Play className="w-4 h-4" /> Resume
             </button>
           ) : (
             <button 
               onClick={handlePause}
-              className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-surface-hover hover:bg-border rounded-lg text-sm transition-colors"
+              className="app-button-subtle flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-lg text-sm"
             >
               <Pause className="w-4 h-4" /> Pause
             </button>
           )}
           <button 
             onClick={handleStop}
-            className="flex items-center justify-center gap-1 px-3 py-2 bg-danger/20 hover:bg-danger/30 text-danger rounded-lg text-sm transition-colors"
+            className="app-status-danger flex items-center justify-center gap-1 px-3 py-2 rounded-lg text-sm"
           >
             <Square className="w-4 h-4" /> Stop
           </button>
@@ -322,7 +323,7 @@ export function Chat() {
       </aside>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col bg-surface border border-border rounded-xl overflow-hidden">
+      <div className="app-card flex-1 flex flex-col rounded-xl overflow-hidden">
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-4">
           {events.length === 0 ? (
@@ -348,7 +349,7 @@ export function Chat() {
 
         {/* Confirmation Banner */}
         {pendingConfirmation && (
-          <div className="bg-warning/10 border-t border-warning/30 px-6 py-4">
+          <div className="border-t app-border bg-[var(--app-warning-soft)] px-6 py-4">
             <div className="flex items-center gap-4">
               <AlertTriangle className="w-6 h-6 text-warning" />
               <div className="flex-1">
@@ -359,13 +360,13 @@ export function Chat() {
               </div>
               <button
                 onClick={() => handleConfirm(true)}
-                className="flex items-center gap-1 px-4 py-2 bg-success hover:bg-success/80 text-white rounded-lg transition-colors"
+                className="app-status-success flex items-center gap-1 px-4 py-2 rounded-lg"
               >
                 <Check className="w-4 h-4" /> Approve
               </button>
               <button
                 onClick={() => handleConfirm(false)}
-                className="flex items-center gap-1 px-4 py-2 bg-danger hover:bg-danger/80 text-white rounded-lg transition-colors"
+                className="app-status-danger flex items-center gap-1 px-4 py-2 rounded-lg"
               >
                 <X className="w-4 h-4" /> Reject
               </button>
@@ -374,7 +375,7 @@ export function Chat() {
         )}
 
         {/* Input */}
-        <div className="p-4 border-t border-border">
+        <div className="p-4 border-t app-border">
           <div className="flex gap-3 items-end">
             <textarea
               ref={textareaRef}
@@ -384,13 +385,13 @@ export function Chat() {
               placeholder="Send a message..."
               disabled={isProcessing || conversation?.status === 'completed'}
               rows={1}
-              className="flex-1 px-4 py-3 bg-bg border border-border rounded-lg text-text-primary placeholder:text-text-muted resize-none focus:outline-none focus:border-primary disabled:opacity-50"
+              className="flex-1 px-4 py-3 bg-bg border app-border rounded-lg text-text-primary placeholder:text-text-muted resize-none focus:outline-none focus:border-primary disabled:opacity-50"
               style={{ minHeight: '48px', maxHeight: '200px' }}
             />
             <button
               onClick={handleSendMessage}
               disabled={!message.trim() || isProcessing || conversation?.status === 'completed'}
-              className="p-3 bg-primary hover:bg-primary-hover text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="app-button-accent p-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Send className="w-5 h-5" />
             </button>

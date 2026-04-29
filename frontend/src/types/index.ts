@@ -8,6 +8,9 @@ export interface Conversation {
   total_cost: number;
   status: 'active' | 'paused' | 'completed' | 'error';
   workspace_type: string;
+  sandbox_id?: string | null;
+  conversation_url?: string | null;
+  session_api_key?: string | null;
 }
 
 export interface ConversationStats {
@@ -73,6 +76,10 @@ export interface AppConfig {
 
 // Settings edited in the app and persisted server-side.
 export interface Settings {
+  backend_mode: BackendMode;
+  backend_base_url: string;
+  backend_auth_token: string;
+  has_backend_auth_token: boolean;
   llm_model: string;
   llm_api_key: string;
   llm_base_url: string;
@@ -90,6 +97,32 @@ export interface Settings {
   max_context_size: number;
   has_llm_api_key: boolean;
   has_openhands_cloud_api_key: boolean;
+}
+
+export type BackendMode = 'prototype' | 'local' | 'cloud';
+
+export interface BackendConnection {
+  mode: BackendMode;
+  baseUrl: string;
+  authToken?: string;
+}
+
+export interface SandboxInfo {
+  id: string;
+  status: string;
+  session_api_key?: string | null;
+  exposed_urls?: Array<{
+    name: string;
+    url: string;
+    port: number;
+  }> | null;
+}
+
+export interface SecretInfo {
+  id?: string;
+  name: string;
+  description?: string | null;
+  value_set: boolean;
 }
 
 // WebSocket message types

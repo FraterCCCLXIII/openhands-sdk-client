@@ -8,10 +8,10 @@ interface LayoutProps {
 
 export function Layout({ onOpenSettings, onNewChat }: LayoutProps) {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex min-h-screen flex-col bg-bg app-text">
       {/* Navbar */}
-      <nav className="flex justify-between items-center px-8 py-4 bg-surface border-b border-border">
-        <Link to="/" className="flex items-center gap-3 text-text-primary font-semibold text-xl hover:text-primary transition-colors">
+      <nav className="app-card flex items-center justify-between border-x-0 border-t-0 px-8 py-4">
+        <Link to="/" className="flex items-center gap-3 text-xl font-semibold app-text hover:text-primary transition-colors">
           <Bot className="w-7 h-7" />
           <span>OpenHands Client</span>
         </Link>
@@ -19,20 +19,20 @@ export function Layout({ onOpenSettings, onNewChat }: LayoutProps) {
         <div className="flex items-center gap-4">
           <Link 
             to="/" 
-            className="text-text-secondary hover:text-text-primary px-4 py-2 rounded-lg hover:bg-surface-hover transition-colors"
+            className="app-button-subtle rounded-lg px-4 py-2"
           >
             Dashboard
           </Link>
           <button 
             onClick={onNewChat}
-            className="flex items-center gap-2 text-text-secondary hover:text-text-primary px-4 py-2 rounded-lg hover:bg-surface-hover transition-colors"
+            className="app-button-subtle flex items-center gap-2 rounded-lg px-4 py-2"
           >
             <MessageSquarePlus className="w-4 h-4" />
             New Chat
           </button>
           <button 
             onClick={onOpenSettings}
-            className="flex items-center gap-2 text-text-secondary hover:text-text-primary px-4 py-2 rounded-lg hover:bg-surface-hover transition-colors"
+            className="app-button-subtle flex items-center gap-2 rounded-lg px-4 py-2"
           >
             <Settings className="w-4 h-4" />
             Settings
@@ -46,7 +46,7 @@ export function Layout({ onOpenSettings, onNewChat }: LayoutProps) {
       </main>
 
       {/* Footer */}
-      <footer className="text-center py-4 text-text-muted text-sm border-t border-border">
+      <footer className="border-t app-border py-4 text-center text-sm app-text-subtle">
         OpenHands Client v0.1.0 | Powered by{' '}
         <a 
           href="https://docs.openhands.dev/sdk" 

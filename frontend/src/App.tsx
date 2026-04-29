@@ -6,6 +6,7 @@ import { NewChatModal } from './components/NewChatModal';
 import { Dashboard } from './pages/Dashboard';
 import { Chat } from './pages/Chat';
 import { createConversation } from './lib/api';
+import { AppearanceProvider } from './theme';
 
 function AppContent() {
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -19,6 +20,7 @@ function AppContent() {
       navigate(`/chat/${result.conversation_id}`);
     } catch (error) {
       console.error('Failed to create conversation:', error);
+      throw error;
     }
   }
 
@@ -55,9 +57,11 @@ function AppContent() {
 
 function App() {
   return (
-    <BrowserRouter>
-      <AppContent />
-    </BrowserRouter>
+    <AppearanceProvider>
+      <BrowserRouter>
+        <AppContent />
+      </BrowserRouter>
+    </AppearanceProvider>
   );
 }
 

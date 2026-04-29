@@ -4,16 +4,27 @@ import { X, MessageSquarePlus } from 'lucide-react';
 interface NewChatModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (title?: string) => void;
+  onSubmit: (title?: string) => Promise<void>;
 }
 
 export function NewChatModal({ isOpen, onClose, onSubmit }: NewChatModalProps) {
   const [title, setTitle] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(title.trim() || undefined);
-    setTitle('');
+    setIsCreating(true);
+    setError(null);
+
+    try {
+      await onSubmit(title.trim() || undefined);
+      setTitle('');
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : 'Failed to create conversation');
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -23,16 +34,16 @@ export function NewChatModal({ isOpen, onClose, onSubmit }: NewChatModalProps) {
       className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="bg-surface rounded-xl w-full max-w-md shadow-2xl">
+      <div className="app-card w-full max-w-md overflow-hidden rounded-xl">
         {/* Header */}
-        <div className="flex justify-between items-center px-6 py-4 border-b border-border">
+        <div className="flex items-center justify-between border-b app-border px-6 py-4">
           <h2 className="text-xl font-semibold flex items-center gap-2">
             <MessageSquarePlus className="w-5 h-5" />
             New Conversation
           </h2>
           <button 
             onClick={onClose}
-            className="text-text-secondary hover:text-text-primary p-1 rounded hover:bg-surface-hover transition-colors"
+            className="app-button-subtle rounded p-1"
           >
             <X className="w-5 h-5" />
           </button>
@@ -49,25 +60,33 @@ export function NewChatModal({ isOpen, onClose, onSubmit }: NewChatModalProps) {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Enter conversation title..."
-              className="w-full px-4 py-3 bg-bg border border-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary"
+              className="w-full rounded-lg border app-border bg-bg px-4 py-3 text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary"
+              disabled={isCreating}
               autoFocus
             />
+            {error && (
+              <p className="mt-3 rounded-lg app-status-danger px-3 py-2 text-sm">
+                {error}
+              </p>
+            )}
           </div>
 
           {/* Footer */}
-          <div className="flex justify-end gap-3 px-6 py-4 border-t border-border">
+          <div className="flex justify-end gap-3 border-t app-border px-6 py-4">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-text-secondary hover:text-text-primary hover:bg-surface-hover rounded-lg transition-colors"
+              disabled={isCreating}
+              className="app-button-subtle rounded-lg px-4 py-2"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-lg transition-colors"
+              disabled={isCreating}
+              className="app-button-accent rounded-lg px-4 py-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Create
+              {isCreating ? 'Creating...' : 'Create'}
             </button>
           </div>
         </form>
